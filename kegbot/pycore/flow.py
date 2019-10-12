@@ -36,6 +36,7 @@ class Flow:
     self._last_log_time = None
     self._total_ticks = 0L
     self._volume_ml = None 
+    self._msgCount = 0 
 
   def __str__(self):
     return '<Flow 0x%08x: meter_name=%s ticks=%s username=%s max_idle=%s>' % (self._flow_id,
@@ -44,6 +45,23 @@ class Flow:
 
   def GetUpdateEvent(self):
     event = kbevent.FlowUpdate()
+    event.flow_id = self._flow_id
+    event.meter_name = self._meter_name
+    event.state = self._state
+
+    if self._bound_username:
+      event.username = self._bound_username
+
+    event.start_time = self._start_time
+    event.last_activity_time = self._end_time
+    event.ticks = self.GetTicks()
+    event.volume_ml = self.GetVolumeMl()
+    event.message_count = self._msgCount
+
+    return event
+
+  def GetWebUpdateEvent(self):
+    event = kbevent.WebFlowUpdate()
     event.flow_id = self._flow_id
     event.meter_name = self._meter_name
     event.state = self._state
@@ -65,6 +83,9 @@ class Flow:
     self._end_time = when
     if tap is not None:
         self._volume_ml = tap.TicksToMilliliters(self._total_ticks)
+
+  def IncrementCount(self):
+    self._msgCount += 1
 
   def GetId(self):
     return self._flow_id
